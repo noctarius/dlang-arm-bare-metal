@@ -47,7 +47,6 @@ SOURCE_GDB=http://ftp.gnu.org/gnu/gdb/$TAR_GDB
 # Basic setup to have correct toolchain and paths
 export TARGET=arm-none-eabi
 export PREFIX=$(pwd)/arm-none-eabi
-export CC_PREFIX=$(pwd)/cc-arm-none-eabi
 
 PWD=$(pwd)
 TMP=$(pwd)/tmp
@@ -206,7 +205,7 @@ tar_wait_with_progress() {
 ## configure $toolname $parameters
 configure() {
 	log=$LOG/$1.$TIMESTAMP.configure.log
-	echo -e "\tUsed configuration: ${@:2}"
+	echo -e "\$1 is configured with: ${@:2}"
 	echo -e -n "\tExecuting configure... "
 	cd $BUILD/$1
 	$EXTRACT/$1/configure ${@:2} 1>$log 2>&1
@@ -263,21 +262,17 @@ build_gcc() {
 		echo
 	else
 		echo "Building $NAME_GCC..."
-		ln -s $EXTRACT/$NAME_NEWLIB/newlib $EXTRACT/$NAME_GCC/newlib
-		ln -s $EXTRACT/$NAME_NEWLIB/libgloss $EXTRACT/$NAME_GCC/libgloss
-		ln -s $EXTRACT/$NAME_GMP $EXTRACT/$NAME_GCC/gmp
-		ln -s $EXTRACT/$NAME_MPFR $EXTRACT/$NAME_GCC/mpfr
-		ln -s $EXTRACT/$NAME_MPC $EXTRACT/$NAME_GCC/mpc
-
 		# bootstrapping gcc
-		configure $NAME_GCC --target=$TARGET --prefix=$PREFIX --with-cpu=cortex-a8 --with-mode=thumb --disable-multilib --enable-languages="c,c++,d" --with-newlib \
-		--with-headers=$EXTRACT/$NAME_GCC/newlib/libc/include --with-system-zlib
+		configure $NAME_GCC --target=$TARGET --prefix=$PREFIX --with-cpu=cortex-a8 --with-mode=thumb --enable-languages="c,c++,d" --with-newlib \
+		--with-headers=$EXTRACT/$NAME_GCC/newlib/libc/include --with-system-zlib --with-tune=cortex-a8 --with-fpu=neon --with-float=hard --disable-nls \
+		--enable-interwork --enable-multilib --disable-werror --enable-target-optspace --with-dwarf2
 		compile_gcc all-gcc
 		install_gcc install-gcc
 
 		# newlib
 		echo -e "\tIntermediate compile of newlib..."
-		configure $NAME_NEWLIB --target=$TARGET --prefix=$PREFIX --disable-multilib --disable-newlib-supplied-syscalls
+		configure $NAME_NEWLIB --target=$TARGET --prefix=$PREFIX --enable-interwork --enable-multilib --disable-newlib-supplied-syscalls --disable-nls \
+		--disable-werror --enable-target-optspace
 		compile $NAME_NEWLIB
 		install $NAME_NEWLIB
 
@@ -348,7 +343,6 @@ delete_tool_dir $NAME_GCC
 delete_tool_dir $NAME_NEWLIB
 echo "success."
 create_dir $PREFIX
-create_dir $CC_PREFIX
 create_dir $DOWNLOAD
 create_dir $PID
 create_dir $LOG
@@ -360,6 +354,7 @@ create_dir $BUILD_MPC
 create_dir $BUILD_BINUTILS
 create_dir $BUILD_GCC
 create_dir $BUILD_NEWLIB
+create_dir $BUILD_GDB
 echo
 
 echo "Downloading toolchain sources..."
@@ -390,17 +385,16 @@ echo "success."
 cd $PWD
 echo
 
-# Build GMP
-#build $NAME_GMP --prefix=$CC_PREFIX --enable-cxx
-
-# Build MPFT
-#build $NAME_MPFR --prefix=$CC_PREFIX --with-gmp=$CC_PREFIX
-
-# Build MPC
-#build $NAME_MPC --prefix=$CC_PREFIX --with-gmp=$CC_PREFIX --with-mpfr=$CC_PREFIX
+echo -n "Linking GMP, MPFR, MPC, newlib sources to GCC... "
+ln -s $EXTRACT/$NAME_NEWLIB/newlib $EXTRACT/$NAME_GCC/newlib
+ln -s $EXTRACT/$NAME_NEWLIB/libgloss $EXTRACT/$NAME_GCC/libgloss
+ln -s $EXTRACT/$NAME_GMP $EXTRACT/$NAME_GCC/gmp
+ln -s $EXTRACT/$NAME_MPFR $EXTRACT/$NAME_GCC/mpfr
+ln -s $EXTRACT/$NAME_MPC $EXTRACT/$NAME_GCC/mpc
+echo "success."
+echo
 
 # Build Binutils
-#build $NAME_BINUTILS --target=$TARGET --prefix=$PREFIX --disable-nls --disable-multilib --with-gnu-as --with-gnu-ld --disable-libssp
 build $NAME_BINUTILS --target=$TARGET --prefix=$PREFIX --disable-nls --enable-interwork --enable-multilib --disable-werror --with-gnu-as --with-gnu-ld --with-gnu-cc
 export PATH=$PREFIX/bin:$PATH
 
@@ -412,6 +406,6 @@ export PATH=$PREFIX/bin:$PATH
 build_gcc
 
 # Build GDB
-build $NAME_GDB --target=$TARGET --prefix=$PREFIX --disable-interwork --enable-multilib --disable-werror
+build $NAME_GDB --target=$TARGET --prefix=$PREFIX --enable-interwork --enable-multilib --disable-werror --enable-target-optspace
 
 echo "Finished."
