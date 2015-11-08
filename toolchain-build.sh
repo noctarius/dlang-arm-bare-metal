@@ -48,7 +48,7 @@ SOURCE_GDB=http://ftp.gnu.org/gnu/gdb/$TAR_GDB
 export TARGET=arm-none-eabi
 export PREFIX=$(pwd)/arm-none-eabi
 
-PWD=$(pwd)
+MY_PWD=$(pwd)
 TMP=$(pwd)/tmp
 DOWNLOAD=$TMP/download
 EXTRACT=$TMP/extract
@@ -129,6 +129,7 @@ progress_bar() {
 
 ## git_clone $url $dirname
 git_clone() {
+	logfile=$LOG/$2.$TIMESTAMP.clone.log
 	dl_dir=$DOWNLOAD/$2
 
 	if [ ! -d $dl_dir ]; then
@@ -142,77 +143,98 @@ git_clone() {
 	fi
 
 	# Clone repo data
-	echo -e "\tClone: $2..."
-	git fetch --progress 1>$LOG/git.log 2>&1 &
+	echo -e "\tCloning: $2..."
+	git fetch --progress 1>>$logfile 2>&1 &
 	echo $! > $PID/git.pid
-	git_wait_with_progress $PID/git.pid $LOG/git.log
+	git_wait_with_progress $PID/git.pid $logfile $2
 
 	# Checkout correct branch
 	echo -e "\tCheckout: $2..."
-	git checkout origin/$2 1>$LOG/git.log 2>&1 &
+	git checkout origin/$2 1>>$logfile 2>&1 &
 	echo $! > $PID/git.pid
-	git_wait_with_progress $PID/git.pid $LOG/git.log
+	git_wait_with_progress $PID/git.pid $logfile $2
 }
 
-## git_wait_with_progress $pidfile $logfile
+## git_wait_with_progress $pidfile $logfile $dirname
 git_wait_with_progress() {
 	pid=`cat $1`
 	trap "kill $pid 2> /dev/null" EXIT
-	while kill -0 $pid 2> /dev/null; do
-		val=`cat $2 | tail -n1 | grep "[0-9]\{1,3\}%" | sed -n -e 's/.*\ \([0-9]\{1,3\}\)%.*/\1/p'`
-		progress_bar 100 $val
-		sleep 0.1
-	done
+
+	git_progress() {
+		while kill -0 $1 2> /dev/null; do
+			val=`cat $2 | tail -n1 | grep "[0-9]\{1,3\}%" | sed -n -e 's/.*\ \([0-9]\{1,3\}\)%.*/\1/p'`
+			if [ -n val ]; then
+				progress_bar 100 $val
+			fi
+			sleep 0.1
+		done
+	}
+	git_progress $pid $2 &
+	reporter=$!
+
+	wait $pid
+	exitcode=$?
+
 	progress_bar 100 100
 	echo
     trap - EXIT
-    rm $1
-    rm $2
+    check_exit_code "failed. Please see $log" $exitcode
+	rm $1
 }
 
-## decompress $file $outputpath
+## decompress $sourcepath $file $outputpath
 decompress() {
-	echo -e "\tExtract: $1"
-	usage=$(ls -la $1 | awk '{ print $5 }')
-	cd $2
-	if [ $(echo $1 | awk '{ print index($1, "bz2") }') -gt 1 ]; then
-		tar xfj $1 1>$LOG/tar.log 2>&1 &
+	tarfile=$1/$2
+	logfile=$LOG/$2.$TIMESTAMP.decompress.log
+	echo -e "\tExtract: $2"
+	usage=$(ls -la $tarfile | awk '{ print $5 }')
+	cd $3
+	if [ $(echo $tarfile | awk '{ print index($2, "bz2") }') -gt 1 ]; then
+		tar xfj $tarfile 1>$logfile 2>&1 &
 	else
-		tar xfz $1 1>$LOG/tar.log 2>&1 &
+		tar xfz $tarfile 1>$logfile 2>&1 &
 	fi
 	echo $! > $PID/tar.pid
-	tar_wait_with_progress $PID/tar.pid $LOG/tar.log $usage
-	cd $PWD
+	tar_wait_with_progress $PID/tar.pid $logfile $usage
+	cd $MY_PWD
 }
 
-## tar_wait_with_progress $pidfile $logfile
+## tar_wait_with_progress $pidfile $logfile $usage
 tar_wait_with_progress() {
 	pid=`cat $1`
 	trap "kill $pid 2> /dev/null" EXIT
-	while kill -0 $pid 2> /dev/null; do
-		kill -SIGINFO $pid 
-		val=`tail -n2 $2 | grep "In:" | sed -n -e 's/In:\ \([0-9]*\).*/\1/p'`
-		progress_bar $3 $val
-		sleep 0.2
-	done
+
+	tar_progress() {
+		while kill -0 $1 2> /dev/null; do
+			kill -SIGINFO $1
+			val=`tail -n2 $2 | grep "In:" | sed -n -e 's/In:\ \([0-9]*\).*/\1/p'`
+			if [ -n val ]; then
+				progress_bar $3 $val
+			fi
+			sleep 0.2
+		done
+	}
+	tar_progress $pid $2 $3 &
+	reporter=$!
+
+	wait $pid
+	exitcode=$?
+
 	progress_bar 100 100
 	echo
     trap - EXIT
+    check_exit_code "failed. Please see $log" $exitcode
     rm $1
-    rm $2
 }
 
 ## configure $toolname $parameters
 configure() {
 	log=$LOG/$1.$TIMESTAMP.configure.log
-	echo -e "\$1 is configured with: ${@:2}"
+	echo -e "\t$1 is configured with: ${@:2}"
 	echo -e -n "\tExecuting configure... "
 	cd $BUILD/$1
 	$EXTRACT/$1/configure ${@:2} 1>$log 2>&1
-	if [ "$?" -ne 0 ]; then
-		echo "failed. Please see $log"
-		exit 1
-	fi
+	check_exit_code "failed. Please see $log" $?
 	echo "success."
 }
 
@@ -221,10 +243,7 @@ compile() {
 	log=$LOG/$1.$TIMESTAMP.compile.log
 	echo -e -n "\tCompiling... "
 	make -j4 all 1>$log 2>&1
-	if [ "$?" -ne 0 ]; then
-		echo "failed. Please see $log"
-		exit 1
-	fi
+	check_exit_code "failed. Please see $log" $?
 	echo "success."
 }
 
@@ -233,10 +252,7 @@ install() {
 	log=$LOG/$1.$TIMESTAMP.install.log
 	echo -e -n "\tInstallation... "
 	make install 1>$log 2>&1
-	if [ "$?" -ne 0 ]; then
-		echo "failed. Please see $log"
-		exit 1
-	fi
+	check_exit_code "failed. Please see $log" $?
 	echo "success."
 }
 
@@ -290,10 +306,7 @@ compile_gcc() {
 	log=$LOG/$NAME_GCC.$TIMESTAMP.compile.log
 	echo -e -n "\tCompiling target $1... "
 	make CFLAGS="-g -O2 -fbracket-depth=1024" CXXFLAGS="-g -O2 -fbracket-depth=1024" -j4 $1 1>>$log 2>&1
-	if [ "$?" -ne 0 ]; then
-		echo "failed. Please see $log"
-		exit 1
-	fi
+	check_exit_code "failed. Please see $log" $?
 	echo "success."
 }
 
@@ -303,10 +316,7 @@ install_gcc() {
 	log=$LOG/$NAME_GCC.$TIMESTAMP.install.log
 	echo -e -n "\tInstallation target $1... "
 	make $1 1>>$log 2>&1
-	if [ "$?" -ne 0 ]; then
-		echo "failed. Please see $log"
-		exit 1
-	fi
+	check_exit_code "failed. Please see $log" $?
 	echo "success."
 }
 
@@ -314,6 +324,25 @@ install_gcc() {
 delete_tool_dir() {
 	if [ ! -f $BUILD/$1.success ]; then
 		rm -rf $BUILD/$1 > /dev/null
+	fi
+}
+
+## print $message
+print() {
+	echo $1
+}
+
+## symbolic_link $source $target
+symbolic_link() {
+	ln -s $1 $2
+	check_exit_code "failed. Could not create symbolic link to $2" $?
+}
+
+## check_exit_code $message $exitcode
+check_exit_code() {
+	if [ "$2" -ne 0 ]; then
+		print $1
+		exit 1
 	fi
 }
 
@@ -369,28 +398,28 @@ download $SOURCE_GDB $TAR_GDB
 echo
 
 echo "Extracting sources..."
-decompress $DOWNLOAD/$TAR_GMP $EXTRACT
-decompress $DOWNLOAD/$TAR_MPFR $EXTRACT
-decompress $DOWNLOAD/$TAR_MPC $EXTRACT
-decompress $DOWNLOAD/$TAR_BINUTILS $EXTRACT
-decompress $DOWNLOAD/$TAR_GCC $EXTRACT
-decompress $DOWNLOAD/$TAR_NEWLIB $EXTRACT
-decompress $DOWNLOAD/$TAR_GDB $EXTRACT
+decompress $DOWNLOAD $TAR_GMP $EXTRACT
+decompress $DOWNLOAD $TAR_MPFR $EXTRACT
+decompress $DOWNLOAD $TAR_MPC $EXTRACT
+decompress $DOWNLOAD $TAR_BINUTILS $EXTRACT
+decompress $DOWNLOAD $TAR_GCC $EXTRACT
+decompress $DOWNLOAD $TAR_NEWLIB $EXTRACT
+decompress $DOWNLOAD $TAR_GDB $EXTRACT
 echo
 
 echo -n "Patching GCC sources for GDC... "
 cd $DOWNLOAD/$NAME_GDC
 ./setup-gcc.sh $EXTRACT/$NAME_GCC 1>$LOG/$NAME_GDC.$TIMESTAMP.patching.log 2>&1
 echo "success."
-cd $PWD
+cd $MY_PWD
 echo
 
 echo -n "Linking GMP, MPFR, MPC, newlib sources to GCC... "
-ln -s $EXTRACT/$NAME_NEWLIB/newlib $EXTRACT/$NAME_GCC/newlib
-ln -s $EXTRACT/$NAME_NEWLIB/libgloss $EXTRACT/$NAME_GCC/libgloss
-ln -s $EXTRACT/$NAME_GMP $EXTRACT/$NAME_GCC/gmp
-ln -s $EXTRACT/$NAME_MPFR $EXTRACT/$NAME_GCC/mpfr
-ln -s $EXTRACT/$NAME_MPC $EXTRACT/$NAME_GCC/mpc
+symbolic_link $EXTRACT/$NAME_NEWLIB/newlib $EXTRACT/$NAME_GCC/newlib
+symbolic_link $EXTRACT/$NAME_NEWLIB/libgloss $EXTRACT/$NAME_GCC/libgloss
+symbolic_link $EXTRACT/$NAME_GMP $EXTRACT/$NAME_GCC/gmp
+symbolic_link $EXTRACT/$NAME_MPFR $EXTRACT/$NAME_GCC/mpfr
+symbolic_link $EXTRACT/$NAME_MPC $EXTRACT/$NAME_GCC/mpc
 echo "success."
 echo
 
@@ -399,13 +428,15 @@ build $NAME_BINUTILS --target=$TARGET --prefix=$PREFIX --disable-nls --enable-in
 export PATH=$PREFIX/bin:$PATH
 
 # Build GCC
-#build_gcc --target=$TARGET --prefix=$PREFIX --enable-languages=d,c,c++ --disable-bootstrap --disable-libssp --disable-libgomp --disable-libmudflap --disable-multilib --disable-libphobos \
-#--disable-decimal-float --disable-libffi --disable-libmudflap --disable-libquadmath --disable-libssp --disable-libstdcxx-pch --disable-nls --disable-shared --disable-threads \
-#--disable-tls --with-gnu-as --with-gnu-ld --with-gnu-dbg --with-cpu=cortex-a8 --with-tune=cortex-a8 --with-mode=thumb --without-headers --with-gmp=$CC_PREFIX --with-mpfr=$CC_PREFIX --with-mpc=$CC_PREFIX
-
 build_gcc
 
 # Build GDB
 build $NAME_GDB --target=$TARGET --prefix=$PREFIX --enable-interwork --enable-multilib --disable-werror --enable-target-optspace
 
+echo -n "Cleaning up after compilation... "
+rm -rf $TMP > /dev/null
+check_exit_code "failed. Please remove $TMP directory manually." $?
+echo "success."
+
+cd $MY_PWD
 echo "Finished."
