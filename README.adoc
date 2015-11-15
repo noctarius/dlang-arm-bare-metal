@@ -29,6 +29,10 @@ bash <(curl -s https://raw.githubusercontent.com/noctarius/dlang-arm-bare-metal/
 While building (due to downloads, extraction and building) the builder might take up up to 5GB diskspace. Please make sure the necessary
 amount of free diskspace is available, otherwise the build will fail.
 
+== What Is In The Toolchain?
+
+The toolchain consists of the GNU toolchain, the GCC compiler, GDC as the D compiler, newlib as the common stdlib implementation, GDB and QEMU compiled for ARM emulation.
+
 == Supported OS
 
 At the moment Ubuntu and OS X is supported but more operating systems are going to be supported in the near future.
@@ -53,3 +57,9 @@ Building on OS X obviously requires XCode to be installed. Please use the App St
 toolchain builder.
 
 The XCode link:https://itunes.apple.com/de/app/xcode/id497799835[App Store Link]
+
+== What Is Missing?
+
+At the moment there is not yet a D library. I'm looking forward to integrate a minimalistic D lib to have most common language features supported, however this is not an easy task and I probably will reuse an existing implementation as a base.
+
+Also additional supported / tested operating systems are missing. Writing bash scripts for multiple OS' is not an easy task since provided tools often behave slightly different or have different syntax. The script however is prepared to recognize the most common Linux or BSD distributions and any kind of help is very appreciated :)
