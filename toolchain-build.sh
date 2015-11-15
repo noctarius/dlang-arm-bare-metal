@@ -80,6 +80,10 @@ DISTRO_TYPE_OSX="OSX"
 DISTRO_TYPE_REDHAT="RedHat"
 DISTRO_TYPE_MANDRAKE="Mandrake"
 
+# APT_GET_UBUNTU_PACKAGES
+UBUNTU_PKGS="binutils gcc g++ make autoconf texinfo zlib1g-dev python pkg-config libglib2.0-dev libtool shtool autogen"
+
+
 
 
 #################################################################
@@ -130,11 +134,24 @@ function init_functions() {
     echo -e "\tNumber of physical CPU cores: $CPUS"
     echo
 
+    echo "Checking basic requirements..."
+    case $OS_TYPE in
+      $OS_TYPE_DARWIN)
+        check_os_darwin
+        ;;
+      $OS_TYPE_LINUX)
+        check_os_linux
+        ;;
+      *)
+        echo "The operating system is not yet officially supported. It might work and any help to add additional systems is very appreciated"
+        ;;
+    esac
+    echo
+
     # Checking prerequisits
     echo "Checking for necessary tools..."
     check_tool python
     check_tool install
-    check_tool pkg-config
     check_tool git
     check_tool curl
     check_tool gcc
@@ -261,8 +278,55 @@ function init_functions() {
     echo
   }
 
+  check_os_darwin() {
+    local success=1
+    if [ ! `type -P clang` ]; then
+      echo "* Please install Xcode first."
+      success=0
+    fi
+    if [ ! `type -P pkg-config` ] || [ ! `type -P autoconf` ] || [ ! `type -P automake` ]; then
+      echo "* Please install necessary tools, this can be easily achieved by using:"
+      echo -e "\tMacPorts:"
+      echo -e "\t\tDownload and install MacPorts from 'http://www.macports.org/install.php'"
+      echo -e "\t\tExecute 'sudo port install pkgconfig'"
+      echo "or ..."
+      echo -e "\tHomebrew:"
+      echo -e "\t\tInstall Homebrew 'ruby -e \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"'"
+      echo -e "\t\tExecute 'brew install pkg-config autoconf automake'"
+      success=0
+    fi
+    if [ ! `clang -v 2>&1 | grep "Xcode/iOS" | wc -l | sed -e 's/^[[:space:]]*//'` -eq 0 ]; then
+      echo "* Please agree to the license agreement of Xcode by executing 'sudo xcodebuild -license'"
+      success=0
+    fi
+    if [ $success -eq 0 ]; then
+      exit 1
+    fi
+  }
 
-
+  check_os_linux() {
+    case $DISTRO_TYPE in
+      $DISTRO_TYPE_DEBIAN)
+        if [ `type -P gcc` ]; then
+          local success=1
+          local pkgs=$(echo $UBUNTU_PKGS | tr " " "/n")
+          for pkg in $pkgs; do
+            if [ `dpkg -l | grep $pkg | wc -l` -eq 0 ]; then
+              success=0
+            fi
+          done
+          if [ $success -eq 0 ]; then
+            echo "Not all necessary packages are installed."
+            echo "Please execute 'sudo apt-get install $UBUNTU_PKGS'"
+            exit 1
+          fi
+        fi
+        ;;
+      *)
+        echo "The operating system is not yet officially supported. It might work and any help to add additional systems is very appreciated"
+        ;;
+    esac
+  }
 
   #################################################################
   # -------------------- INTERNAL FUNCTIONS --------------------- #
@@ -770,5 +834,3 @@ function init_functions() {
 # load functions
 init_functions
 execute
-
-# apt-get install binutils gcc g++ make autoconf texinfo zlib1g-dev python pkg-config libglib2.0-dev libtool shtool autogen
