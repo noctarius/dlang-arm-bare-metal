@@ -1,0 +1,30 @@
+= C, C++, D Bare Metal Toolchain Builder
+Christoph Engelbert <https://github.com/noctarius[@noctarius2k]>
+// Settings:
+:compat-mode!:
+:idseparator: -
+// Aliases:
+:project-name: dlang-arm-bare-metal README
+:project-handle: dlang-arm-bare-metal-readme
+:toc:
+
+This toolchain builder script will automatically download, configure, build and install a full bare metal toolchain for C, C++ and D
+(at the moment only Cortex-A8 but it is just not yet configurable). This toolchain consists of the typical tools like GCC, AS, LD and
+other GNU tools. In addition it will generate GDB, GDC and QEMU for the ARM target platform.
+
+== Usage
+
+The toolchain builder can be downloaded and executed in a single line of code.
+
+```
+mkdir toolchain && cd toolchain && bash <(curl -s https://raw.githubusercontent.com/noctarius/dlang-arm-bare-metal/master/toolchain-build.sh)
+```
+
+== Supported OS
+
+At the moment Ubuntu and OS X is supported but more operating systems are going to be supported in the near future.
+
+  * Linux
+  ** Ubunutu 15.10 [tested]
+  * OS X
+  ** 10.11 [tested]
