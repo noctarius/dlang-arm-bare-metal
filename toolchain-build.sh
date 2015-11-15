@@ -1,47 +1,85 @@
 #!/bin/bash
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Toolchain versions
-VERSION_GMP=6.1.0
-VERSION_MPFR=3.1.3
-VERSION_MPC=1.0.3
-VERSION_BINUTILS=2.25
-VERSION_GCC=4.9.3
-VERSION_GDC=4.9
-VERSION_NEWLIB=1.20.0
-VERSION_GDB=7.10
-VERSION_QEMU=2.4.1
+VERSION_GMP="6.1.0"
+VERSION_MPFR="3.1.3"
+VERSION_MPC="1.0.3"
+VERSION_BINUTILS="2.25"
+VERSION_GCC="4.9.3"
+VERSION_GDC="4.9"
+VERSION_NEWLIB="1.20.0"
+VERSION_GDB="7.10"
+VERSION_QEMU="2.4.1"
 
 # Names
-NAME_GMP=gmp-$VERSION_GMP
-NAME_MPFR=mpfr-$VERSION_MPFR
-NAME_MPC=mpc-$VERSION_MPC
-NAME_BINUTILS=binutils-$VERSION_BINUTILS
-NAME_GCC=gcc-$VERSION_GCC
-NAME_GDC=gdc-$VERSION_GDC
-NAME_NEWLIB=newlib-$VERSION_NEWLIB
-NAME_GDB=gdb-$VERSION_GDB
-NAME_QEMU=qemu-$VERSION_QEMU
+NAME_GMP="gmp-$VERSION_GMP"
+NAME_MPFR="mpfr-$VERSION_MPFR"
+NAME_MPC="mpc-$VERSION_MPC"
+NAME_BINUTILS="binutils-$VERSION_BINUTILS"
+NAME_GCC="gcc-$VERSION_GCC"
+NAME_GDC="gdc-$VERSION_GDC"
+NAME_NEWLIB="newlib-$VERSION_NEWLIB"
+NAME_GDB="gdb-$VERSION_GDB"
+NAME_QEMU="qemu-$VERSION_QEMU"
 
 # Compressed file names
-TAR_GMP=$NAME_GMP.tar.bz2
-TAR_MPFR=$NAME_MPFR.tar.gz
-TAR_MPC=$NAME_MPC.tar.gz
-TAR_BINUTILS=$NAME_BINUTILS.tar.gz
-TAR_GCC=$NAME_GCC.tar.gz
-TAR_NEWLIB=$NAME_NEWLIB.tar.gz
-TAR_GDB=$NAME_GDB.tar.gz
-TAR_QEMU=$NAME_QEMU.tar.bz2
+TAR_GMP="$NAME_GMP.tar.bz2"
+TAR_MPFR="$NAME_MPFR.tar.gz"
+TAR_MPC="$NAME_MPC.tar.gz"
+TAR_BINUTILS="$NAME_BINUTILS.tar.gz"
+TAR_GCC="$NAME_GCC.tar.gz"
+TAR_NEWLIB="$NAME_NEWLIB.tar.gz"
+TAR_GDB="$NAME_GDB.tar.gz"
+TAR_QEMU="$NAME_QEMU.tar.bz2"
 
 # Download source locations
-SOURCE_GMP=https://gmplib.org/download/gmp/$TAR_GMP
-SOURCE_MPFR=http://ftp.gnu.org/gnu/mpfr/$TAR_MPFR
-SOURCE_MPC=http://ftp.gnu.org/gnu/mpc/$TAR_MPC
-SOURCE_BINUTILS=http://ftpmirror.gnu.org/binutils/$TAR_BINUTILS
-SOURCE_GCC=http://ftpmirror.gnu.org/gcc/$NAME_GCC/$TAR_GCC
-SOURCE_GDC=https://github.com/D-Programming-GDC/GDC.git
-SOURCE_NEWLIB=ftp://sources.redhat.com/pub/newlib/$TAR_NEWLIB
-SOURCE_GDB=http://ftp.gnu.org/gnu/gdb/$TAR_GDB
-SOURCE_QEMU=http://wiki.qemu-project.org/download/$TAR_QEMU
+SOURCE_GMP="https://gmplib.org/download/gmp/$TAR_GMP"
+SOURCE_MPFR="http://ftp.gnu.org/gnu/mpfr/$TAR_MPFR"
+SOURCE_MPC="http://ftp.gnu.org/gnu/mpc/$TAR_MPC"
+SOURCE_BINUTILS="http://ftpmirror.gnu.org/binutils/$TAR_BINUTILS"
+SOURCE_GCC="http://ftpmirror.gnu.org/gcc/$NAME_GCC/$TAR_GCC"
+SOURCE_GDC="https://github.com/D-Programming-GDC/GDC.git"
+SOURCE_NEWLIB="ftp://sources.redhat.com/pub/newlib/$TAR_NEWLIB"
+SOURCE_GDB="http://ftp.gnu.org/gnu/gdb/$TAR_GDB"
+SOURCE_QEMU="http://wiki.qemu-project.org/download/$TAR_QEMU"
+
+# BASE64 encoded diffs
+PIXMAN_CONFIGURE_AC="MTEwMywxMTA1YzExMDMKPCAJICAgcGl4bWFuL3BpeG1hbi12ZXJzaW9uLmgKPCAJICAgZGVtb3MvTWFrZWZpbGUKPCAJICAgdGVzdC9NYWtlZmlsZV0pCi0tLQo+IAkgICBwaXhtYW4vcGl4bWFuLXZlcnNpb24uaF0pCg=="
+PIXMAN_MAKEFILE_AM="MWMxCjwgU1VCRElSUyA9IHBpeG1hbiBkZW1vcyB0ZXN0Ci0tLQo+IFNVQkRJUlMgPSBwaXhtYW4K"
+QEMU_MAKEFILE="MTgxYzE4MQo8IAkkKGNhbGwgcXVpZXQtY29tbWFuZCwkKE1BS0UpICQoU1VCRElSX01BS0VGTEFHUykgLUMgcGl4bWFuIFY9IiQoVikiIGFsbCwpCi0tLQo+IAkkKGNhbGwgcXVpZXQtY29tbWFuZCwkKE1BS0UpICQoU1VCRElSX01BS0VGTEFHUykgLUMgcGl4bWFuIFY9IiQoVikiICxpbnN0YWxsLCkKMTg0YzE4NAo8IAkoY2QgcGl4bWFuOyBDRkxBR1M9IiQoQ0ZMQUdTKSAtZlBJQyAkKGV4dHJhX2NmbGFncykgJChleHRyYV9sZGZsYWdzKSIgJChTUkNfUEFUSCkvcGl4bWFuL2NvbmZpZ3VyZSAkKEFVVE9DT05GX0hPU1QpIC0tZGlzYWJsZS1ndGsgLS1kaXNhYmxlLXNoYXJlZCAtLWVuYWJsZS1zdGF0aWMpCi0tLQo+IAkoY2QgcGl4bWFuOyBDRkxBR1M9IiQoQ0ZMQUdTKSAtZlBJQyAkKGV4dHJhX2NmbGFncykgJChleHRyYV9sZGZsYWdzKSIgJChTUkNfUEFUSCkvcGl4bWFuL2NvbmZpZ3VyZSAkKEFVVE9DT05GX0hPU1QpIC0tZGlzYWJsZS1ndGsgLS1kaXNhYmxlLXNoYXJlZCAtLWVuYWJsZS1zdGF0aWMgLS1kaXNhYmxlLW1teCkK"
+PIXMAN_MMX_C="OTJjOTIKPCAjICBpZmRlZiBfX09QVElNSVpFX18KLS0tCj4gIyAgaWYgMAo="
+
+# OS type definitions
+OS_TYPE_LINUX="Linux"
+OS_TYPE_DARWIN="Darwin"
+OS_TYPE_BSD="BSD"
+OS_TYPE_WINDOWS="Windows"
+OS_TYPE_SOLARIS="Solaris"
+OS_TYPE_UNKNOWN="Unknown"
+
+# ARCH type definitions
+ARCH_TYPE_X32="x32"
+ARCH_TYPE_X64="x64"
+ARCH_TYPE_UNKOWN="Unknown"
+
+# Distro type definitions
+DISTRO_TYPE_DEBIAN="Debian"
+DISTRO_TYPE_SUSE="SuSE"
+DISTRO_TYPE_OSX="OSX"
+DISTRO_TYPE_REDHAT="RedHat"
+DISTRO_TYPE_MANDRAKE="Mandrake"
+
 
 
 #################################################################
@@ -52,27 +90,27 @@ SOURCE_QEMU=http://wiki.qemu-project.org/download/$TAR_QEMU
 unset CC
 unset CXX
 
-export TARGET=arm-none-eabi
-export PREFIX=$(pwd)/arm-none-eabi
+export TARGET="arm-none-eabi"
+export PREFIX="$(pwd)/arm-none-eabi"
 
 MY_PWD=$(pwd)
-TMP=$(pwd)/tmp
-DOWNLOAD=$TMP/download
-EXTRACT=$TMP/extract
-BUILD=$TMP/build
-PID=$TMP/pid
-LOG=$TMP/log
+TMP="$MY_PWD/tmp"
+DOWNLOAD="$TMP/download"
+EXTRACT="$TMP/extract"
+BUILD="$TMP/build"
+PID="$TMP/pid"
+LOG="$TMP/log"
 
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
-BUILD_GMP=$BUILD/$NAME_GMP
-BUILD_MPFR=$BUILD/$NAME_MPFR
-BUILD_MPC=$BUILD/$NAME_MPC
-BUILD_BINUTILS=$BUILD/$NAME_BINUTILS
-BUILD_GCC=$BUILD/$NAME_GCC
-BUILD_NEWLIB=$BUILD/$NAME_NEWLIB
-BUILD_GDB=$BUILD/$NAME_GDB
-BUILD_QEMU=$BUILD/$NAME_QEMU
+BUILD_GMP="$BUILD/$NAME_GMP"
+BUILD_MPFR="$BUILD/$NAME_MPFR"
+BUILD_MPC="$BUILD/$NAME_MPC"
+BUILD_BINUTILS="$BUILD/$NAME_BINUTILS"
+BUILD_GCC="$BUILD/$NAME_GCC"
+BUILD_NEWLIB="$BUILD/$NAME_NEWLIB"
+BUILD_GDB="$BUILD/$NAME_GDB"
+BUILD_QEMU="$BUILD/$NAME_QEMU"
 
 function init_functions() {
   execute() {
@@ -81,6 +119,9 @@ function init_functions() {
     OS_ARCH=$(detect_os_arch)
     CPUS=$(detect_cpus)
     DISTRO_TYPE=$(detect_distro_type)
+
+    INFO_SIGNAL=$(info_signal)
+
 
     echo "Analyzing environment:"
     echo -e "\tOperating System Type: $OS_TYPE"
@@ -91,6 +132,9 @@ function init_functions() {
 
     # Checking prerequisits
     echo "Checking for necessary tools..."
+    check_tool python
+    check_tool install
+    check_tool pkg-config
     check_tool git
     check_tool curl
     check_tool gcc
@@ -103,10 +147,13 @@ function init_functions() {
     check_tool tar
     check_tool gzip
     check_tool bzip2
-    check_tool_os Darwin clang
-    check_tool_os Darwin xcodebuild "Please install Xcode for full compiler support"
-    check_tool_distro Debian apt-get
-    check_tool_distro RedHat yum
+    check_tool makeinfo
+    check_tool base64
+    check_tool patch
+    check_tool_os $OS_TYPE_DARWIN clang
+    check_tool_os $OS_TYPE_DARWIN xcodebuild "Please install Xcode for full compiler support"
+    check_tool_distro $DISTRO_TYPE_DEBIAN apt-get
+    check_tool_distro $DISTRO_TYPE_REDHAT yum
     echo
 
     # Prepare building the toolchain
@@ -174,13 +221,7 @@ function init_functions() {
     echo "success."
     echo
 
-    guard_os Darwin \
-      echo -n "Patching QEMU sources... "; \
-      cd $BUILD_QEMU; \
-      sed 's/--disable-gtk --disable-shared --enable-static/--disable-gtk --disable-shared --enable-static --disable-mmx/g' Makefile > Makefile; \
-      cd $MY_PWD; \
-      echo "success."; \
-      echo
+    guard_os $OS_TYPE_DARWIN patch_qemu_osx
 
     # Build Binutils
     build $NAME_BINUTILS --target=$TARGET --prefix=$PREFIX --disable-nls --enable-interwork --enable-multilib --disable-werror --with-gnu-as --with-gnu-ld --with-gnu-cc
@@ -206,6 +247,19 @@ function init_functions() {
     echo "Finished."
   }
 
+  patch_qemu_osx() {
+    echo -n "Patching QEMU sources for OS X... "
+    cd $EXTRACT/$NAME_QEMU
+    rm -rf pixman/test
+    rm -rf pixman/demos
+    apply_diff "$QEMU_MAKEFILE" "$EXTRACT/$NAME_QEMU/Makefile"
+    apply_diff "$PIXMAN_MAKEFILE_AM" "$EXTRACT/$NAME_QEMU/pixman/Makefile.am"
+    apply_diff "$PIXMAN_CONFIGURE_AC" "$EXTRACT/$NAME_QEMU/pixman/configure.ac"
+    apply_diff "$PIXMAN_MMX_C" "$EXTRACT/$NAME_QEMU/pixman/pixman/pixman-mmx.c"
+    cd $MY_PWD
+    echo "success."
+    echo
+  }
 
 
 
@@ -352,6 +406,18 @@ function init_functions() {
     rm $1
   }
 
+  ## is_bz2 $filename
+  is_bz2() {
+    case $OS_TYPE in
+      $OS_TYPE_DARWIN)
+        echo $(expr "$tarfile" : '.*bz2$')
+        ;;
+      *)
+        echo $(expr match "$tarfile" '.*bz2$')
+        ;;
+    esac
+  }
+
   ## decompress $sourcepath $file $outputpath
   decompress() {
     local tarfile=$1/$2
@@ -359,15 +425,21 @@ function init_functions() {
     echo -e "\tExtract: $2"
     local usage=$(ls -la $tarfile | awk '{ print $5 }')
     cd $3
-    if [ $(expr match "$tarfile" '.*bz2$') -gt 1 ]; then
-      dd if=$tarfile 2>>$logfile > >(tar xfj - 2>&1 1>>$logfile) &
+
+    if [ $(is_bz2 $tarfile) -gt 1 ]; then
+      local tarparam="xfj"
     else
-      dd if=$tarfile 2>>$logfile > >(tar xfz - 2>&1 1>>$logfile ) &
+      local tarparam="xfz"
     fi
+
+    dd if=$tarfile 2>>$logfile > >(tar $tarparam - 2>&1 1>>$logfile) &
     echo $! > $PID/tar.pid
+
     tar_wait_with_progress $PID/tar.pid $logfile $usage
     cd $MY_PWD
   }
+
+
 
   ## tar_wait_with_progress $pidfile $logfile $usage
   tar_wait_with_progress() {
@@ -377,12 +449,13 @@ function init_functions() {
     tar_progress() {
       while [ ! -f $2 ]; do sleep 0.1; done
       while kill -0 $1 2> /dev/null; do
-        kill -SIGUSR1 $1
+        kill -SIG${INFO_SIGNAL} $1
         if [ -f $2 ]; then
-          if [ $OS_TYPE = "Linux" ]; then
+          if [ $OS_TYPE = $OS_TYPE_LINUX ]; then
             local val=`tail -n2 $2 | grep "copied," | awk '{ print $1 }'`
           else
-            local val=`tail -n2 $2 | grep "In:" | sed -n -e 's/In:\ \([0-9]*\).*/\1/p'`
+            #local val=`tail -n2 $2 | grep "In:" | sed -n -e 's/In:\ \([0-9]*\).*/\1/p'`
+            local val=`tail -n2 $2 | grep "bytes transferred in" | awk '{ print $1 }'`
           fi
           if [ -n val ]; then
             progress_bar $3 $val
@@ -404,6 +477,8 @@ function init_functions() {
       rm $1
   }
 
+
+
   ## configure $toolname $parameters
   configure() {
     local log=$LOG/$1.$TIMESTAMP.configure.log
@@ -424,11 +499,11 @@ function init_functions() {
     echo "success."
   }
 
-  ## install $toolname
+  ## install $toolname $target
   install() {
     local log=$LOG/$1.$TIMESTAMP.install.log
     echo -e -n "\tInstallation... "
-    make install 1>$log 2>&1
+    make $2 1>$log 2>&1
     check_exit_code "failed. Please see $log" $?
     echo "success."
   }
@@ -442,7 +517,7 @@ function init_functions() {
       echo "Building $1..."
       configure $@
       compile $1
-      install $1
+      install $1 install
       touch $BUILD/$1.success
       echo
     fi
@@ -482,11 +557,16 @@ function init_functions() {
   compile_gcc() {
     local log=$LOG/$NAME_GCC.$TIMESTAMP.compile.log
     echo -e -n "\tCompiling target $1... "
-    make CFLAGS="-g -O2 -fbracket-depth=1024" CXXFLAGS="-g -O2 -fbracket-depth=1024" -j$CPUS $1 1>>$log 2>&1
+
+    local flags="-g -O2"
+    if [ $OS_TYPE == $OS_TYPE_DARWIN ]; then
+      flags="$flags -fbracket-depth=1024"
+    fi
+
+    make CFLAGS="$flags" CXXFLAGS="$flags" -j$CPUS $1 1>>$log 2>&1
     check_exit_code "failed. Please see $log" $?
     echo "success."
   }
-
 
   ## install_gcc $target
   install_gcc() {
@@ -513,7 +593,7 @@ function init_functions() {
       echo "Building $1..."
       configure $@
       compile $1 -i
-      install $1
+      install $1 install
       touch $BUILD/$1.success
       echo
     fi
@@ -541,22 +621,22 @@ function init_functions() {
   detect_os_type() {
     case $(uname -s) in
       Darwin)
-        echo "Darwin"
+        echo $OS_TYPE_DARWIN
         ;;
       Linux)
-        echo "Linux"
+        echo $OS_TYPE_LINUX
         ;;
       CYGWIN*|MINGW32*|MSYS*)
-        echo "Windows"
+        echo $OS_TYPE_WINDOWS
         ;;
       *BSD|DragonFly)
-        echo "BSD"
+        echo $OS_TYPE_BSD
         ;;
       SunOS)
-        echo "Solaris"
+        echo $OS_TYPE_SOLARIS
         ;;
       *)
-        echo "Unknown";
+        echo $OS_TYPE_UNKNOWN;
         ;;
     esac
   }
@@ -564,13 +644,13 @@ function init_functions() {
   detect_os_arch() {
     case $(uname -m) in
       x86_64)
-        echo "x64"
+        echo $ARCH_TYPE_X64
         ;;
         i*86|x86_32)
-        echo "x32"
+        echo $ARCH_TYPE_X64
         ;;
       *)
-        echo "Unknown"
+        echo $ARCH_TYPE_UNKOWN
         ;;
     esac
   }
@@ -602,15 +682,15 @@ function init_functions() {
           local id=$(if test -f /usr/lib/os-release; then source /usr/lib/os-release; fi && source /etc/os-release && if [ -n "$ID_LIKE" ]; then echo $ID_LIKE; else echo $ID; fi | awk '{print tolower($0)}')
           case $id in
             debian|ubuntu|linuxmint)
-              echo "Debian"
+              echo $DISTRO_TYPE_DEBIAN
               return 0
               ;;
             *redhat*|*fedora*|*rhel*|centos)
-              echo "RedHat"
+              echo $DISTRO_TYPE_REDHAT
               return 0
               ;;
             *suse)
-              echo "SuSE"
+              echo $DISTRO_TYPE_SUSE
               return 0
               ;;
           esac
@@ -619,24 +699,24 @@ function init_functions() {
         if [ `type -P lsb_release` ]; then
           case $(lsb_release -si | awk '{print tolower($0)}') in
             ubuntu|debian)
-              echo "Debian"
+              echo $DISTRO_TYPE_DEBIAN
               return 0
               ;;
           esac
         fi
 
         if [ -f /etc/redhat-release -o -f /etc/centos-release -o -f /etc/fedora-release ]; then
-          echo "RedHat"
+          echo $DISTRO_TYPE_REDHAT
         elif [ -f /etc/SuSE-release -o -f /etc/sles-release ]; then
-          echo "SuSE"
+          echo $DISTRO_TYPE_SUSE
         elif [ -f /etc/mandrake-release ]; then
-          echo "Mandrake"
+          echo $DISTRO_TYPE_MANDRAKE
         elif [ -f /etc/debian_version ]; then
-          echo "Debian"
+          echo $DISTRO_TYPE_DEBIAN
         fi
         ;;
       Darwin)
-        echo "OSX"
+        echo $DISTRO_TYPE_OSX
         ;;
       BSD)
         echo "$(uname -s)"
@@ -647,10 +727,42 @@ function init_functions() {
     esac
   }
 
+  info_signal() {
+    if [ $OS_TYPE == $OS_TYPE_LINUX ]; then
+      echo "USR1"
+    else
+      echo "INFO"
+    fi
+  }
+
   ## guard $filter=>"[ $v1 = $v2 ]" $call
   guard() {
     if  eval "$1"; then
       ${@:2}
+    fi
+  }
+
+  ## apply_diff $base64diff $file
+  apply_diff() {
+    local tf=$(temp_file)
+    echo "$1" | base64 -D > $tf
+    patch $2 $tf > /dev/null
+    rm $tf
+  }
+
+  ## temp_file
+  temp_file() {
+    if [ `type -P mktemp` ]; then
+      echo "$(mktemp)";
+    elif [ `type -P tempfile` ]; then
+      echo "$(tempfile)"
+    else
+      while true; do
+        local candidate=$(RANDOM);
+        if [ ! -f "/tmp/$candidate" ]; then
+          echo "/tmp/$candidate"
+        fi
+      done
     fi
   }
 }
@@ -658,3 +770,5 @@ function init_functions() {
 # load functions
 init_functions
 execute
+
+# apt-get install binutils gcc g++ make autoconf texinfo zlib1g-dev python pkg-config libglib2.0-dev libtool shtool autogen
