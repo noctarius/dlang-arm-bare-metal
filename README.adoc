@@ -14,11 +14,20 @@ other GNU tools. In addition it will generate GDB, GDC and QEMU for the ARM targ
 
 == Usage
 
-The toolchain builder can be downloaded and executed in a single line of code.
+The toolchain builder can be downloaded and executed in a single line of code, however it is recommended to create a subdirectory first.
+To sucessfully build the toolchain some operating systems might have additional tools or libraries to be installed. Please see the
+section about your operating system first.
 
 ```
-mkdir toolchain && cd toolchain && bash <(curl -s https://raw.githubusercontent.com/noctarius/dlang-arm-bare-metal/master/toolchain-build.sh)
+# Create a new directory and switch to it
+mkdir toolchain && cd toolchain
+
+# Download and execute the toolchain builder
+bash <(curl -s https://raw.githubusercontent.com/noctarius/dlang-arm-bare-metal/master/toolchain-build.sh)
 ```
+
+While building (due to downloads, extraction and building) the builder might take up up to 5GB diskspace. Please make sure the necessary
+amount of free diskspace is available, otherwise the build will fail.
 
 == Supported OS
 
@@ -28,3 +37,19 @@ At the moment Ubuntu and OS X is supported but more operating systems are going 
   ** Ubunutu 15.10 [tested]
   * OS X
   ** 10.11 [tested]
+
+== Ubuntu Builds
+
+Building on Ubuntu requires some tools and libraries to be installed, the follwing apt-get call will install those. Install those first:
+
+```
+apt-get install binutils gcc g++ make autoconf texinfo zlib1g-dev python \
+  pkg-config libglib2.0-dev libtool shtool autogen
+```
+
+== OS X Builds
+
+Building on OS X obviously requires XCode to be installed. Please use the App Store to install XCode before you try to execute the 
+toolchain builder.
+
+The XCode link:https://itunes.apple.com/de/app/xcode/id497799835[App Store Link]
