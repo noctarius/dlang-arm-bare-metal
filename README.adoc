@@ -48,7 +48,7 @@ Building on Ubuntu requires some tools and libraries to be installed, the follwi
 
 ```
 apt-get install binutils gcc g++ make autoconf texinfo zlib1g-dev python \
-  pkg-config libglib2.0-dev libtool shtool autogen
+  pkg-config libglib2.0-dev libtool shtool autogen git
 ```
 
 == OS X Builds
