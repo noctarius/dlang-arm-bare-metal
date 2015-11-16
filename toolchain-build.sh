@@ -495,13 +495,18 @@ function init_functions() {
     cd $3
 
     if [ $(is_bz2 $tarfile) -gt 1 ]; then
-      local tarparam="xfj"
+      dd if=$tarfile 2>>$logfile | bzip2 -dc | tar xf - 2>&1 1>>$logfile &
     else
-      local tarparam="xfz"
+      dd if=$tarfile 2>>$logfile | tar xfz - 2>&1 1>>$logfile &
     fi
 
-    dd if=$tarfile 2>>$logfile > >(tar $tarparam - 2>&1 1>>$logfile) &
-    echo $! > $PID/tar.pid
+    while true; do
+      local pid=`ps aux | grep dd | grep "$tarfile" | awk '{print $2}'`
+      if [ $pid ]; then
+        echo $pid > $PID/tar.pid
+        break
+      fi
+    done
 
     tar_wait_with_progress $PID/tar.pid $logfile $usage
     cd $MY_PWD
