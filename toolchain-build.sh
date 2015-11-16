@@ -80,8 +80,8 @@ DISTRO_TYPE_OSX="OSX"
 DISTRO_TYPE_REDHAT="RedHat"
 DISTRO_TYPE_MANDRAKE="Mandrake"
 
-# APT_GET_UBUNTU_PACKAGES
-UBUNTU_PKGS="binutils gcc g++ make autoconf texinfo zlib1g-dev python pkg-config libglib2.0-dev libtool shtool autogen"
+# APT_GET_DEBIAN_PACKAGES
+DEBIAN_PKGS="binutils gcc g++ make autoconf texinfo zlib1g-dev python pkg-config libglib2.0-dev libtool shtool autogen"
 
 
 
@@ -307,26 +307,30 @@ function init_functions() {
   check_os_linux() {
     case $DISTRO_TYPE in
       $DISTRO_TYPE_DEBIAN)
-        if [ `type -P gcc` ]; then
-          local success=1
-          local pkgs=$(echo $UBUNTU_PKGS | tr " " "/n")
-          for pkg in $pkgs; do
-            if [ `dpkg -l | grep $pkg | wc -l` -eq 0 ]; then
-              success=0
-            fi
-          done
-          if [ $success -eq 0 ]; then
-            echo "Not all necessary packages are installed."
-            echo "Please execute 'sudo apt-get install $UBUNTU_PKGS'"
-            exit 1
+        local success=1
+        local pkgs=$(echo $DEBIAN_PKGS | tr " " "\n")
+        echo "Checking necessary packages:"
+        for pkg in $pkgs; do
+          if [ `dpkg -l | awk '{print $2}' | grep $pkg | wc -l` -eq 0 ]; then
+            echo -e "\t* Package $pkg is missing"
+            success=0
           fi
+        done
+        if [ $success -eq 0 ]; then
+          echo "Not all necessary packages are installed."
+          echo "Please execute 'sudo apt-get install $DEBIAN_PKGS'"
+          exit 1
         fi
         ;;
       *)
-        echo "The operating system is not yet officially supported. It might work and any help to add additional systems is very appreciated"
+        echo "The Linux distribution is not yet officially supported. It might work and any help to add additional systems is very appreciated"
         ;;
     esac
   }
+
+
+
+
 
   #################################################################
   # -------------------- INTERNAL FUNCTIONS --------------------- #
