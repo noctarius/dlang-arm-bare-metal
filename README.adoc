@@ -41,7 +41,7 @@ At the moment Ubuntu and OS X is supported but more operating systems are going 
   ** 10.10 [untested]
   ** 10.11 [tested]
 
-== Ubuntu Builds
+== Ubuntu / Debian Builds
 
 Building on Ubuntu or Debian requires some tools and libraries to be installed, the follwing apt-get call will install those. Install those first:
 
